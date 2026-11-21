@@ -6,6 +6,7 @@ import java.util.UUID;
 
 public record OrderResponseDto(
 		Long id,
+		Long userId,
 		String customerName,
 		String customerEmail,
 		String status,

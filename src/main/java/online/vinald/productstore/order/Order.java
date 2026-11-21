@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import online.vinald.productstore.orderItem.OrderItem;
+import online.vinald.productstore.user.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -43,6 +44,10 @@ public class Order {
 	private LocalDate updatedAt;
 
 	private UUID uuid;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id", nullable = false)
+	private User user;
 
 	@JsonManagedReference
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)

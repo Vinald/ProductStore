@@ -22,6 +22,7 @@ public class OrderMapper {
 	public OrderResponseDto toResponseDto(Order order) {
 		return new OrderResponseDto(
 				order.getId(),
+				order.getUser().getId(),
 				order.getCustomerName(),
 				order.getCustomerEmail(),
 				order.getStatus(),

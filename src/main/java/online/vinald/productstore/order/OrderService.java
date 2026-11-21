@@ -7,6 +7,10 @@ import online.vinald.productstore.orderItem.OrderItem;
 import online.vinald.productstore.orderItem.OrderItemCreateDto;
 import online.vinald.productstore.product.Product;
 import online.vinald.productstore.product.ProductRepository;
+import online.vinald.productstore.user.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,12 +22,15 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional
 public class OrderService {
+	private static final String OWNER_ROLE = "OWNER";
+
 	private final OrderRepository orderRepository;
 	private final ProductRepository productRepository;
 	private final OrderMapper orderMapper;
 
-	public OrderResponseDto createOrder(OrderCreateRequestDto orderCreateRequestDto) {
+	public OrderResponseDto createOrder(OrderCreateRequestDto orderCreateRequestDto, User currentUser) {
 		Order order = orderMapper.toEntity(orderCreateRequestDto);
+		order.setUser(currentUser);
 
 		List<OrderItem> orderItems = new ArrayList<>();
 		BigDecimal totalAmount = BigDecimal.ZERO;
@@ -57,31 +64,40 @@ public class OrderService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<OrderResponseDto> getAllOrders() {
-		return orderRepository.findAll().stream()
-				.map(orderMapper::toResponseDto)
-				.toList();
+	public Page<OrderResponseDto> getAllOrders(User currentUser, Pageable pageable) {
+		Page<Order> orders = isOwner(currentUser)
+				? orderRepository.findAll(pageable)
+				: orderRepository.findByUserId(currentUser.getId(), pageable);
+
+		return orders.map(orderMapper::toResponseDto);
 	}
 
 	@Transactional(readOnly = true)
-	public OrderResponseDto getOrderById(Long id) {
-		return orderRepository.findById(id)
-				.map(orderMapper::toResponseDto)
+	public OrderResponseDto getOrderById(Long id, User currentUser) {
+		Order order = orderRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+		checkOwnership(order, currentUser);
+
+		return orderMapper.toResponseDto(order);
 	}
 
-	public OrderResponseDto updateOrder(Long id, OrderRequestDto orderRequestDto) {
+	public OrderResponseDto updateOrder(Long id, OrderRequestDto orderRequestDto, User currentUser) {
 		Order existingOrder = orderRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+		checkOwnership(existingOrder, currentUser);
 
 		orderMapper.updateEntity(existingOrder, orderRequestDto);
 
 		return orderMapper.toResponseDto(orderRepository.save(existingOrder));
 	}
 
-	public void deleteOrderById(Long id) {
+	public void deleteOrderById(Long id, User currentUser) {
 		Order order = orderRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+		checkOwnership(order, currentUser);
 
 		if (order.getOrderItems() != null) {
 			for (OrderItem orderItem : order.getOrderItems()) {
@@ -92,5 +108,16 @@ public class OrderService {
 		}
 
 		orderRepository.delete(order);
+	}
+
+	private boolean isOwner(User user) {
+		return OWNER_ROLE.equals(user.getRole());
+	}
+
+	private void checkOwnership(Order order, User currentUser) {
+		boolean isOrderOwner = order.getUser().getId().equals(currentUser.getId());
+		if (!isOwner(currentUser) && !isOrderOwner) {
+			throw new AccessDeniedException("You do not have access to this order");
+		}
 	}
 }
