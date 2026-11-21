@@ -14,16 +14,4 @@ public record OrderResponseDto(
 		LocalDate updatedAt,
 		UUID uuid
 ) {
-	public static OrderResponseDto from(Order order) {
-		return new OrderResponseDto(
-				order.getId(),
-				order.getCustomerName(),
-				order.getCustomerEmail(),
-				order.getStatus(),
-				order.getTotalAmount(),
-				order.getCreatedAt(),
-				order.getUpdatedAt(),
-				order.getUuid()
-		);
-	}
 }

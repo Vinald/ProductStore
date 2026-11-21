@@ -9,25 +9,22 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderService {
 	private final OrderRepository orderRepository;
+	private final OrderMapper orderMapper;
 
 	public OrderResponseDto createOrder(OrderRequestDto orderRequestDto) {
-		Order order = new Order();
-		order.setCustomerName(orderRequestDto.customerName());
-		order.setCustomerEmail(orderRequestDto.customerEmail());
-		order.setStatus(orderRequestDto.status());
-		order.setTotalAmount(orderRequestDto.totalAmount());
-		return OrderResponseDto.from(orderRepository.save(order));
+		Order order = orderMapper.toEntity(orderRequestDto);
+		return orderMapper.toResponseDto(orderRepository.save(order));
 	}
 
 	public List<OrderResponseDto> getAllOrders() {
 		return orderRepository.findAll().stream()
-				.map(OrderResponseDto::from)
+				.map(orderMapper::toResponseDto)
 				.toList();
 	}
 
 	public OrderResponseDto getOrderById(Long id) {
 		return orderRepository.findById(id)
-				.map(OrderResponseDto::from)
+				.map(orderMapper::toResponseDto)
 				.orElseThrow(() -> new RuntimeException("Order not found"));
 	}
 
@@ -35,12 +32,9 @@ public class OrderService {
 		Order existingOrder = orderRepository.findById(id)
 				.orElseThrow(() -> new RuntimeException("Order not found"));
 
-		existingOrder.setCustomerName(orderRequestDto.customerName());
-		existingOrder.setCustomerEmail(orderRequestDto.customerEmail());
-		existingOrder.setStatus(orderRequestDto.status());
-		existingOrder.setTotalAmount(orderRequestDto.totalAmount());
+		orderMapper.updateEntity(existingOrder, orderRequestDto);
 
-		return OrderResponseDto.from(orderRepository.save(existingOrder));
+		return orderMapper.toResponseDto(orderRepository.save(existingOrder));
 	}
 
 	public void deleteOrderById(Long id) {

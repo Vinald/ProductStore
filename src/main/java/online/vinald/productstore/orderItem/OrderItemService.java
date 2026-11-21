@@ -15,6 +15,7 @@ public class OrderItemService {
 	private final OrderItemRepository orderItemRepository;
 	private final OrderRepository orderRepository;
 	private final ProductRepository productRepository;
+	private final OrderItemMapper orderItemMapper;
 
 	public OrderItemResponseDto createOrderItem(OrderItemRequestDto orderItemRequestDto) {
 		Order order = orderRepository.findById(orderItemRequestDto.orderId())
@@ -22,24 +23,20 @@ public class OrderItemService {
 		Product product = productRepository.findById(orderItemRequestDto.productId())
 				.orElseThrow(() -> new RuntimeException("Product not found"));
 
-		OrderItem orderItem = new OrderItem();
-		orderItem.setOrder(order);
-		orderItem.setProduct(product);
-		orderItem.setQuantity(orderItemRequestDto.quantity());
-		orderItem.setPriceAtPurchase(product.getPrice());
+		OrderItem orderItem = orderItemMapper.toEntity(orderItemRequestDto, order, product);
 
-		return OrderItemResponseDto.from(orderItemRepository.save(orderItem));
+		return orderItemMapper.toResponseDto(orderItemRepository.save(orderItem));
 	}
 
 	public List<OrderItemResponseDto> getAllOrderItems() {
 		return orderItemRepository.findAll().stream()
-				.map(OrderItemResponseDto::from)
+				.map(orderItemMapper::toResponseDto)
 				.toList();
 	}
 
 	public OrderItemResponseDto getOrderItemById(Long id) {
 		return orderItemRepository.findById(id)
-				.map(OrderItemResponseDto::from)
+				.map(orderItemMapper::toResponseDto)
 				.orElseThrow(() -> new RuntimeException("Order item not found"));
 	}
 
@@ -62,7 +59,7 @@ public class OrderItemService {
 
 		existingOrderItem.setQuantity(orderItemRequestDto.quantity());
 
-		return OrderItemResponseDto.from(orderItemRepository.save(existingOrderItem));
+		return orderItemMapper.toResponseDto(orderItemRepository.save(existingOrderItem));
 	}
 
 	public void deleteOrderItemById(Long id) {

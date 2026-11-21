@@ -15,17 +15,4 @@ public record ProductResponseDto(
 		LocalDate updatedAt,
 		UUID uuid
 ) {
-	public static ProductResponseDto from(Product product) {
-		return new ProductResponseDto(
-				product.getId(),
-				product.getName(),
-				product.getDescription(),
-				product.getCategory(),
-				product.getPrice(),
-				product.getQuantity(),
-				product.getCreatedAt(),
-				product.getUpdatedAt(),
-				product.getUuid()
-		);
-	}
 }

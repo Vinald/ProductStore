@@ -1,5 +1,6 @@
 package online.vinald.productstore.order;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -43,6 +44,7 @@ public class Order {
 
 	private UUID uuid;
 
+	@JsonManagedReference
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<OrderItem> orderItems;
 

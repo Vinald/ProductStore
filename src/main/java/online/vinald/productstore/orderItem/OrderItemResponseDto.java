@@ -14,16 +14,4 @@ public record OrderItemResponseDto(
 		Long orderId,
 		Long productId
 ) {
-	public static OrderItemResponseDto from(OrderItem orderItem) {
-		return new OrderItemResponseDto(
-				orderItem.getId(),
-				orderItem.getQuantity(),
-				orderItem.getPriceAtPurchase(),
-				orderItem.getCreatedAt(),
-				orderItem.getUpdatedAt(),
-				orderItem.getUuid(),
-				orderItem.getOrder() != null ? orderItem.getOrder().getId() : null,
-				orderItem.getProduct() != null ? orderItem.getProduct().getId() : null
-		);
-	}
 }

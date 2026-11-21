@@ -9,26 +9,22 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductService {
 	private  final ProductRepository productRepository;
+	private final ProductMapper productMapper;
 
 	public ProductResponseDto createProduct(ProductRequestDto productRequestDto) {
-		Product product = new Product();
-		product.setName(productRequestDto.name());
-		product.setDescription(productRequestDto.description());
-		product.setCategory(productRequestDto.category());
-		product.setPrice(productRequestDto.price());
-		product.setQuantity(productRequestDto.quantity());
-		return ProductResponseDto.from(productRepository.save(product));
+		Product product = productMapper.toEntity(productRequestDto);
+		return productMapper.toResponseDto(productRepository.save(product));
 	}
 
 	public List<ProductResponseDto> getAllProducts() {
 		return productRepository.findAll().stream()
-				.map(ProductResponseDto::from)
+				.map(productMapper::toResponseDto)
 				.toList();
 	}
 
 	public ProductResponseDto getProductById(Long id) {
 		return productRepository.findById(id)
-				.map(ProductResponseDto::from)
+				.map(productMapper::toResponseDto)
 				.orElseThrow(() -> new RuntimeException("Product not found"));
 	}
 
@@ -36,13 +32,9 @@ public class ProductService {
 		Product existingProduct = productRepository.findById(id)
 				.orElseThrow(() -> new RuntimeException("Product not found"));
 
-		existingProduct.setName(productRequestDto.name());
-		existingProduct.setDescription(productRequestDto.description());
-		existingProduct.setCategory(productRequestDto.category());
-		existingProduct.setPrice(productRequestDto.price());
-		existingProduct.setQuantity(productRequestDto.quantity());
+		productMapper.updateEntity(existingProduct, productRequestDto);
 
-		return ProductResponseDto.from(productRepository.save(existingProduct));
+		return productMapper.toResponseDto(productRepository.save(existingProduct));
 	}
 
 	public  void deleteProductById(Long id) {
