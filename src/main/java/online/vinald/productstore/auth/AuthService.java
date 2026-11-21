@@ -23,12 +23,12 @@ public class AuthService {
 	private final RefreshTokenService refreshTokenService;
 
 	public AuthResponseDto register(AuthRequestDto authRequestDto) {
-		if (userRepository.existsByUsername(authRequestDto.username())) {
-			throw new DuplicateResourceException("Username '" + authRequestDto.username() + "' is already taken");
+		if (userRepository.existsByEmail(authRequestDto.email())) {
+			throw new DuplicateResourceException("Email '" + authRequestDto.email() + "' is already registered");
 		}
 
 		User user = new User();
-		user.setUsername(authRequestDto.username());
+		user.setEmail(authRequestDto.email());
 		user.setPassword(passwordEncoder.encode(authRequestDto.password()));
 		user.setRole("USER");
 		user.setProvider("LOCAL");
@@ -40,13 +40,13 @@ public class AuthService {
 	public AuthResponseDto login(AuthRequestDto authRequestDto) {
 		try {
 			authenticationManager.authenticate(
-					new UsernamePasswordAuthenticationToken(authRequestDto.username(), authRequestDto.password()));
+					new UsernamePasswordAuthenticationToken(authRequestDto.email(), authRequestDto.password()));
 		} catch (BadCredentialsException ex) {
-			throw new InvalidCredentialsException("Invalid username or password");
+			throw new InvalidCredentialsException("Invalid email or password");
 		}
 
-		User user = userRepository.findByUsername(authRequestDto.username())
-				.orElseThrow(() -> new InvalidCredentialsException("Invalid username or password"));
+		User user = userRepository.findByEmail(authRequestDto.email())
+				.orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
 
 		return buildAuthResponse(user);
 	}
@@ -57,12 +57,12 @@ public class AuthService {
 
 		String newAccessToken = jwtService.generateToken(user);
 
-		return new AuthResponseDto(newAccessToken, refreshTokenValue, user.getUsername(), user.getRole());
+		return new AuthResponseDto(newAccessToken, refreshTokenValue, user.getEmail(), user.getRole());
 	}
 
 	private AuthResponseDto buildAuthResponse(User user) {
 		String accessToken = jwtService.generateToken(user);
 		RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
-		return new AuthResponseDto(accessToken, refreshToken.getToken(), user.getUsername(), user.getRole());
+		return new AuthResponseDto(accessToken, refreshToken.getToken(), user.getEmail(), user.getRole());
 	}
 }
