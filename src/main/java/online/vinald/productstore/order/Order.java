@@ -5,9 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import online.vinald.productstore.orderItem.OrderItem;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -40,4 +42,7 @@ public class Order {
 	private LocalDate updatedAt = LocalDate.now();
 
 	private UUID uuid = UUID.randomUUID();
+
+	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<OrderItem> orderItems;
 }

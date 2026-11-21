@@ -1,5 +1,7 @@
 package online.vinald.productstore.product;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
@@ -8,9 +10,11 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import online.vinald.productstore.orderItem.OrderItem;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -48,4 +52,8 @@ public class Product {
 	private LocalDate updatedAt = LocalDate.now();
 
 	private UUID uuid = UUID.randomUUID();
+
+	@JsonIgnore
+	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<OrderItem> orderItems;
 }
