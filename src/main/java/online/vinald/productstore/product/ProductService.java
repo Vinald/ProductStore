@@ -1,6 +1,7 @@
 package online.vinald.productstore.product;
 
 import lombok.RequiredArgsConstructor;
+import online.vinald.productstore.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,12 +30,12 @@ public class ProductService {
 	public ProductResponseDto getProductById(Long id) {
 		return productRepository.findById(id)
 				.map(productMapper::toResponseDto)
-				.orElseThrow(() -> new RuntimeException("Product not found"));
+				.orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 	}
 
 	public ProductResponseDto updateProduct(Long id, ProductRequestDto productRequestDto) {
 		Product existingProduct = productRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Product not found"));
+				.orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
 		productMapper.updateEntity(existingProduct, productRequestDto);
 
@@ -43,7 +44,7 @@ public class ProductService {
 
 	public  void deleteProductById(Long id) {
 		if (!productRepository.existsById(id)) {
-			throw new RuntimeException("Product not found");
+			throw new ResourceNotFoundException("Product not found");
 		}
 		productRepository.deleteById(id);
 	}
