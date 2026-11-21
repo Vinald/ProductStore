@@ -2,7 +2,7 @@ package online.vinald.productstore.order;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import online.vinald.productstore.product.Product;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,31 +14,32 @@ public class OrderController {
 	private final OrderService orderService;
 
 	@PostMapping
-	public Order createOrder(@Valid @RequestBody Order order) {
-		// TODO: Implement this method
-		return null;
+	@ResponseStatus(HttpStatus.CREATED)
+	public OrderResponseDto createOrder(@Valid @RequestBody OrderRequestDto orderRequestDto) {
+		return orderService.createOrder(orderRequestDto);
 	}
 
 	@GetMapping
-	public List<Order> getOrders() {
-		// TODO: Implement this method
-		return null;
+	@ResponseStatus(HttpStatus.OK)
+	public List<OrderResponseDto> getOrders() {
+		return orderService.getAllOrders();
 	}
 
 	@GetMapping("/{id}")
-	public Order getOrderById(@PathVariable Long id) {
-		// TODO: Implement this method
-		return null;
+	@ResponseStatus(HttpStatus.OK)
+	public OrderResponseDto getOrderById(@PathVariable Long id) {
+		return orderService.getOrderById(id);
 	}
 
 	@PutMapping("/{id}")
-	public Order updateOrder( @PathVariable Long id, @Valid @RequestBody Order order) {
-		// TODO: Implement this method
-		return null;
+	@ResponseStatus(HttpStatus.OK)
+	public OrderResponseDto updateOrder(@PathVariable Long id, @Valid @RequestBody OrderRequestDto orderRequestDto) {
+		return orderService.updateOrder(id, orderRequestDto);
 	}
 
 	@DeleteMapping("/{id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void deleteOrder(@PathVariable Long id) {
-		// TODO: Implement this method
+		orderService.deleteOrderById(id);
 	}
 }

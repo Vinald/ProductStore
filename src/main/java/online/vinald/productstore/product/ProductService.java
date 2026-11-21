@@ -10,30 +10,39 @@ import java.util.List;
 public class ProductService {
 	private  final ProductRepository productRepository;
 
-	public Product createProduct(Product product) {
-		return productRepository.save(product);
+	public ProductResponseDto createProduct(ProductRequestDto productRequestDto) {
+		Product product = new Product();
+		product.setName(productRequestDto.name());
+		product.setDescription(productRequestDto.description());
+		product.setCategory(productRequestDto.category());
+		product.setPrice(productRequestDto.price());
+		product.setQuantity(productRequestDto.quantity());
+		return ProductResponseDto.from(productRepository.save(product));
 	}
 
-	public List<Product> getAllProducts() {
-		return productRepository.findAll();
+	public List<ProductResponseDto> getAllProducts() {
+		return productRepository.findAll().stream()
+				.map(ProductResponseDto::from)
+				.toList();
 	}
 
-	public Product getProductById(Long id) {
+	public ProductResponseDto getProductById(Long id) {
 		return productRepository.findById(id)
+				.map(ProductResponseDto::from)
 				.orElseThrow(() -> new RuntimeException("Product not found"));
 	}
 
-	public Product updateProduct(Long id, Product product) {
+	public ProductResponseDto updateProduct(Long id, ProductRequestDto productRequestDto) {
 		Product existingProduct = productRepository.findById(id)
 				.orElseThrow(() -> new RuntimeException("Product not found"));
 
-		existingProduct.setName(product.getName());
-		existingProduct.setDescription(product.getDescription());
-		existingProduct.setCategory(product.getCategory());
-		existingProduct.setPrice(product.getPrice());
-		existingProduct.setQuantity(product.getQuantity());
+		existingProduct.setName(productRequestDto.name());
+		existingProduct.setDescription(productRequestDto.description());
+		existingProduct.setCategory(productRequestDto.category());
+		existingProduct.setPrice(productRequestDto.price());
+		existingProduct.setQuantity(productRequestDto.quantity());
 
-		return productRepository.save(existingProduct);
+		return ProductResponseDto.from(productRepository.save(existingProduct));
 	}
 
 	public  void deleteProductById(Long id) {
