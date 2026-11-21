@@ -5,9 +5,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderMapper {
 
-	public Order toEntity(OrderRequestDto orderRequestDto) {
+	public Order toEntity(OrderCreateRequestDto orderCreateRequestDto) {
 		Order order = new Order();
-		updateEntity(order, orderRequestDto);
+		order.setCustomerName(orderCreateRequestDto.customerName());
+		order.setCustomerEmail(orderCreateRequestDto.customerEmail());
+		order.setStatus(orderCreateRequestDto.status());
 		return order;
 	}
 
@@ -15,7 +17,6 @@ public class OrderMapper {
 		order.setCustomerName(orderRequestDto.customerName());
 		order.setCustomerEmail(orderRequestDto.customerEmail());
 		order.setStatus(orderRequestDto.status());
-		order.setTotalAmount(orderRequestDto.totalAmount());
 	}
 
 	public OrderResponseDto toResponseDto(Order order) {

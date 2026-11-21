@@ -15,8 +15,8 @@ public class OrderController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public OrderResponseDto createOrder(@Valid @RequestBody OrderRequestDto orderRequestDto) {
-		return orderService.createOrder(orderRequestDto);
+	public OrderResponseDto createOrder(@Valid @RequestBody OrderCreateRequestDto orderCreateRequestDto) {
+		return orderService.createOrder(orderCreateRequestDto);
 	}
 
 	@GetMapping
