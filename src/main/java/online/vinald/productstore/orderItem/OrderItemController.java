@@ -2,14 +2,16 @@ package online.vinald.productstore.orderItem;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/order-items")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('OWNER')")
 public class OrderItemController {
 	private final OrderItemService orderItemService;
 
@@ -21,8 +23,8 @@ public class OrderItemController {
 
 	@GetMapping
 	@ResponseStatus(HttpStatus.OK)
-	public List<OrderItemResponseDto> getOrderItems() {
-		return orderItemService.getAllOrderItems();
+	public Page<OrderItemResponseDto> getOrderItems(Pageable pageable) {
+		return orderItemService.getAllOrderItems(pageable);
 	}
 
 	@GetMapping("/{id}")

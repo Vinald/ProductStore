@@ -7,11 +7,12 @@ import online.vinald.productstore.order.Order;
 import online.vinald.productstore.order.OrderRepository;
 import online.vinald.productstore.product.Product;
 import online.vinald.productstore.product.ProductRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -39,10 +40,9 @@ public class OrderItemService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<OrderItemResponseDto> getAllOrderItems() {
-		return orderItemRepository.findAll().stream()
-				.map(orderItemMapper::toResponseDto)
-				.toList();
+	public Page<OrderItemResponseDto> getAllOrderItems(Pageable pageable) {
+		return orderItemRepository.findAll(pageable)
+				.map(orderItemMapper::toResponseDto);
 	}
 
 	@Transactional(readOnly = true)

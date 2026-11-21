@@ -2,10 +2,10 @@ package online.vinald.productstore.product;
 
 import lombok.RequiredArgsConstructor;
 import online.vinald.productstore.exception.ResourceNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -20,10 +20,9 @@ public class ProductService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<ProductResponseDto> getAllProducts() {
-		return productRepository.findAll().stream()
-				.map(productMapper::toResponseDto)
-				.toList();
+	public Page<ProductResponseDto> getAllProducts(Pageable pageable) {
+		return productRepository.findAll(pageable)
+				.map(productMapper::toResponseDto);
 	}
 
 	@Transactional(readOnly = true)

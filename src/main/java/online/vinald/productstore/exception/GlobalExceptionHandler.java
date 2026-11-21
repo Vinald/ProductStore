@@ -2,6 +2,7 @@ package online.vinald.productstore.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,6 +33,11 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(InvalidCredentialsException.class)
 	public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
 		return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+	}
+
+	@ExceptionHandler(AccessDeniedException.class)
+	public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+		return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
