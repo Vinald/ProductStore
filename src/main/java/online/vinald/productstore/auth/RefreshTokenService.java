@@ -23,6 +23,7 @@ public class RefreshTokenService {
 
 	public RefreshToken createRefreshToken(User user) {
 		refreshTokenRepository.deleteByUser(user);
+		refreshTokenRepository.flush();
 
 		RefreshToken refreshToken = new RefreshToken();
 		refreshToken.setUser(user);
