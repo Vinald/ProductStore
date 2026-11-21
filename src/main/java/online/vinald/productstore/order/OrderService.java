@@ -2,11 +2,13 @@ package online.vinald.productstore.order;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class OrderService {
 	private final OrderRepository orderRepository;
 	private final OrderMapper orderMapper;
@@ -16,12 +18,14 @@ public class OrderService {
 		return orderMapper.toResponseDto(orderRepository.save(order));
 	}
 
+	@Transactional(readOnly = true)
 	public List<OrderResponseDto> getAllOrders() {
 		return orderRepository.findAll().stream()
 				.map(orderMapper::toResponseDto)
 				.toList();
 	}
 
+	@Transactional(readOnly = true)
 	public OrderResponseDto getOrderById(Long id) {
 		return orderRepository.findById(id)
 				.map(orderMapper::toResponseDto)

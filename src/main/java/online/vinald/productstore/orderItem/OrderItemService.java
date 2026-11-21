@@ -6,11 +6,13 @@ import online.vinald.productstore.order.OrderRepository;
 import online.vinald.productstore.product.Product;
 import online.vinald.productstore.product.ProductRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class OrderItemService {
 	private final OrderItemRepository orderItemRepository;
 	private final OrderRepository orderRepository;
@@ -28,12 +30,14 @@ public class OrderItemService {
 		return orderItemMapper.toResponseDto(orderItemRepository.save(orderItem));
 	}
 
+	@Transactional(readOnly = true)
 	public List<OrderItemResponseDto> getAllOrderItems() {
 		return orderItemRepository.findAll().stream()
 				.map(orderItemMapper::toResponseDto)
 				.toList();
 	}
 
+	@Transactional(readOnly = true)
 	public OrderItemResponseDto getOrderItemById(Long id) {
 		return orderItemRepository.findById(id)
 				.map(orderItemMapper::toResponseDto)
