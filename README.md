@@ -294,8 +294,15 @@ Reserves stock on create, adjusts the delta on update (quantity change or reassi
 
 **List** / **Get one** / **Update** / **Delete** — standard `GET`/`GET /{id}`/`PUT /{id}`/`DELETE /{id}`, same body shape as create.
 
+## Running tests
+
+```
+./mvnw test
+```
+
+Tests run against an in-memory H2 database via a `test` Spring profile, so they don't need the dev MySQL instance or a real `JWT_SECRET` from `.env`.
+
 ## Not implemented yet
 
 - OAuth2 login (Google/GitHub) — `User.provider`/`providerId` are in place for it, but it needs real OAuth app credentials to wire up and test.
-- Automated tests.
 - A way to promote a user to `OWNER` other than editing the database directly.
