@@ -46,14 +46,27 @@ public class Product {
 	private Integer quantity;
 
 	@Column(updatable = false, name = "created_at")
-	private LocalDate createdAt = LocalDate.now();
+	private LocalDate createdAt;
 
 	@Column(name = "updated_at")
-	private LocalDate updatedAt = LocalDate.now();
+	private LocalDate updatedAt;
 
-	private UUID uuid = UUID.randomUUID();
+	@Column(updatable = false)
+	private UUID uuid;
 
 	@JsonIgnore
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<OrderItem> orderItems;
+
+	@PrePersist
+	protected void onCreate() {
+		this.uuid = UUID.randomUUID();
+		this.createdAt = LocalDate.now();
+		this.updatedAt = LocalDate.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		this.updatedAt = LocalDate.now();
+	}
 }

@@ -3,6 +3,7 @@ package online.vinald.productstore.product;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
@@ -13,31 +14,32 @@ public class ProductController {
 	private  final ProductService productService;
 
 	@PostMapping
+	@ResponseStatus(HttpStatus.CREATED)
 	public Product createProduct(@Valid @RequestBody Product product) {
-		// TODO: Implement this method
-		return null;
+		return productService.createProduct(product);
 	}
 
 	@GetMapping
+	@ResponseStatus(HttpStatus.OK)
 	public List<Product> getProducts() {
-		// TODO: Implement this method
-		return null;
+		return  productService.getAllProducts();
 	}
 
 	@GetMapping("/{id}")
+	@ResponseStatus(HttpStatus.OK)
 	public Product getProductById(@PathVariable Long id) {
-		// TODO: Implement this method
-		return null;
+		return productService.getProductById(id);
 	}
 
 	@PutMapping("/{id}")
+	@ResponseStatus(HttpStatus.OK)
 	public Product updateProduct( @PathVariable Long id, @Valid @RequestBody Product product) {
-		// TODO: Implement this method
-		return null;
+		return productService.updateProduct(id, product);
 	}
 
 	@DeleteMapping("/{id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void deleteProduct(@PathVariable Long id) {
-		// TODO: Implement this method
+		productService.deleteProductById(id);
 	}
 }

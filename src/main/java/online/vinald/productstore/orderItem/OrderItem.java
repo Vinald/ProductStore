@@ -27,12 +27,12 @@ public class OrderItem {
 	private BigDecimal priceAtPurchase;
 
 	@Column(updatable = false, name = "created_at")
-	private LocalDate createdAt = LocalDate.now();
+	private LocalDate createdAt;
 
 	@Column(name = "updated_at")
-	private LocalDate updatedAt = LocalDate.now();
+	private LocalDate updatedAt;
 
-	private UUID uuid = UUID.randomUUID();
+	private UUID uuid;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "order_id", nullable = false)
@@ -41,4 +41,16 @@ public class OrderItem {
 	@ManyToOne
 	@JoinColumn(name = "product_id")
 	private Product product;
+
+	@PrePersist
+	protected void onCreate() {
+		this.uuid = UUID.randomUUID();
+		this.createdAt = LocalDate.now();
+		this.updatedAt = LocalDate.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		this.updatedAt = LocalDate.now();
+	}
 }

@@ -36,13 +36,25 @@ public class Order {
 	private BigDecimal totalAmount;
 
 	@Column(updatable = false)
-	private LocalDate createdAt = LocalDate.now();
+	private LocalDate createdAt;
 
 	@Column(updatable = false)
-	private LocalDate updatedAt = LocalDate.now();
+	private LocalDate updatedAt;
 
-	private UUID uuid = UUID.randomUUID();
+	private UUID uuid;
 
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<OrderItem> orderItems;
+
+	@PrePersist
+	protected void onCreate() {
+		this.uuid = UUID.randomUUID();
+		this.createdAt = LocalDate.now();
+		this.updatedAt = LocalDate.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		this.updatedAt = LocalDate.now();
+	}
 }
