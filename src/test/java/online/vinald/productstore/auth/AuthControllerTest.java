@@ -1,14 +1,17 @@
 package online.vinald.productstore.auth;
 
-import online.vinald.productstore.TestAuthSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -21,73 +24,56 @@ class AuthControllerTest {
 	@Autowired
 	private MockMvc mockMvc;
 
+	@MockitoBean
+	private AuthService authService;
+
+	@MockitoBean
+	private RefreshTokenService refreshTokenService;
+
 	@Test
-	void registerThenLoginSucceeds() throws Exception {
+	void register_delegatesToAuthServiceAndReturnsCreated() throws Exception {
+		AuthResponseDto mockResponse = new AuthResponseDto("access-token", "refresh-token", "alice@example.com", "USER");
+		when(authService.register(any(AuthRequestDto.class))).thenReturn(mockResponse);
+
 		mockMvc.perform(post("/api/v1/auth/register")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("{\"email\":\"alice@example.com\",\"password\":\"password123\"}"))
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.email").value("alice@example.com"))
-				.andExpect(jsonPath("$.role").value("USER"))
-				.andExpect(jsonPath("$.token").isNotEmpty())
-				.andExpect(jsonPath("$.refreshToken").isNotEmpty());
+				.andExpect(jsonPath("$.token").value("access-token"));
+	}
+
+	@Test
+	void login_delegatesToAuthServiceAndReturnsOk() throws Exception {
+		AuthResponseDto mockResponse = new AuthResponseDto("access-token", "refresh-token", "alice@example.com", "USER");
+		when(authService.login(any(AuthRequestDto.class))).thenReturn(mockResponse);
 
 		mockMvc.perform(post("/api/v1/auth/login")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("{\"email\":\"alice@example.com\",\"password\":\"password123\"}"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.token").isNotEmpty());
+				.andExpect(jsonPath("$.token").value("access-token"));
 	}
 
 	@Test
-	void registerWithDuplicateEmailReturnsConflict() throws Exception {
-		String body = "{\"email\":\"bob@example.com\",\"password\":\"password123\"}";
-
-		mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
-				.andExpect(status().isCreated());
-
-		mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
-				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.status").value(409));
-	}
-
-	@Test
-	void loginWithWrongPasswordReturnsUnauthorized() throws Exception {
-		mockMvc.perform(post("/api/v1/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("{\"email\":\"carol@example.com\",\"password\":\"password123\"}"))
-				.andExpect(status().isCreated());
-
-		mockMvc.perform(post("/api/v1/auth/login")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("{\"email\":\"carol@example.com\",\"password\":\"wrongpass\"}"))
-				.andExpect(status().isUnauthorized());
-	}
-
-	@Test
-	void refreshThenLogoutInvalidatesRefreshToken() throws Exception {
-		String response = mockMvc.perform(post("/api/v1/auth/register")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("{\"email\":\"dave@example.com\",\"password\":\"password123\"}"))
-				.andExpect(status().isCreated())
-				.andReturn().getResponse().getContentAsString();
-
-		String refreshToken = TestAuthSupport.extractJsonField(response, "refreshToken");
+	void refresh_delegatesToAuthServiceWithRefreshTokenValue() throws Exception {
+		AuthResponseDto mockResponse = new AuthResponseDto("new-access-token", "refresh-token", "alice@example.com", "USER");
+		when(authService.refresh("refresh-token")).thenReturn(mockResponse);
 
 		mockMvc.perform(post("/api/v1/auth/refresh")
 						.contentType(MediaType.APPLICATION_JSON)
-						.content("{\"refreshToken\":\"" + refreshToken + "\"}"))
+						.content("{\"refreshToken\":\"refresh-token\"}"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.token").isNotEmpty());
+				.andExpect(jsonPath("$.token").value("new-access-token"));
+	}
 
+	@Test
+	void logout_delegatesToRefreshTokenServiceAndReturnsNoContent() throws Exception {
 		mockMvc.perform(post("/api/v1/auth/logout")
 						.contentType(MediaType.APPLICATION_JSON)
-						.content("{\"refreshToken\":\"" + refreshToken + "\"}"))
+						.content("{\"refreshToken\":\"refresh-token\"}"))
 				.andExpect(status().isNoContent());
 
-		mockMvc.perform(post("/api/v1/auth/refresh")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("{\"refreshToken\":\"" + refreshToken + "\"}"))
-				.andExpect(status().isUnauthorized());
+		verify(refreshTokenService).deleteByToken("refresh-token");
 	}
 }

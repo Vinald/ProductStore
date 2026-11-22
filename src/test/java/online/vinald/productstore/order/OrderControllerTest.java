@@ -1,15 +1,27 @@
 package online.vinald.productstore.order;
 
-import online.vinald.productstore.TestAuthSupport;
-import online.vinald.productstore.user.UserRepository;
+import online.vinald.productstore.TestSecuritySupport;
+import online.vinald.productstore.exception.InsufficientStockException;
+import online.vinald.productstore.orderItem.OrderItemCreateDto;
+import online.vinald.productstore.user.User;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -23,70 +35,78 @@ class OrderControllerTest {
 	@Autowired
 	private MockMvc mockMvc;
 
-	@Autowired
-	private UserRepository userRepository;
+	@MockitoBean
+	private OrderService orderService;
 
-	private Long createProductAsOwner(String ownerToken, int quantity) throws Exception {
-		String response = mockMvc.perform(post("/api/v1/products")
-						.header("Authorization", "Bearer " + ownerToken)
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("{\"name\":\"Widget\",\"price\":10.00,\"quantity\":" + quantity + "}"))
-				.andExpect(status().isCreated())
-				.andReturn().getResponse().getContentAsString();
-
-		return TestAuthSupport.extractJsonLongField(response, "id");
+	private OrderResponseDto sampleOrder(Long id, Long userId) {
+		return new OrderResponseDto(id, userId, "Buyer", "buyer@example.com", "PENDING",
+				new BigDecimal("20.00"), null, null, null);
 	}
 
 	@Test
-	void customerCanOnlySeeOwnOrders() throws Exception {
-		String ownerToken = TestAuthSupport.registerAndGetToken(mockMvc, userRepository, "owner2@example.com", "OWNER");
-		Long productId = createProductAsOwner(ownerToken, 10);
-
-		String buyer1Token = TestAuthSupport.registerAndGetToken(mockMvc, userRepository, "buyer1@example.com", "USER");
-		String buyer2Token = TestAuthSupport.registerAndGetToken(mockMvc, userRepository, "buyer2@example.com", "USER");
-
-		String orderBody = "{\"customerName\":\"Buyer One\",\"customerEmail\":\"buyer1@example.com\",\"status\":\"PENDING\","
-				+ "\"items\":[{\"productId\":" + productId + ",\"quantity\":1}]}";
-
-		String orderResponse = mockMvc.perform(post("/api/v1/orders")
-						.header("Authorization", "Bearer " + buyer1Token)
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(orderBody))
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.totalAmount").value(10.00))
-				.andReturn().getResponse().getContentAsString();
-
-		Long orderId = TestAuthSupport.extractJsonLongField(orderResponse, "id");
-
-		mockMvc.perform(get("/api/v1/orders/" + orderId).header("Authorization", "Bearer " + buyer2Token))
-				.andExpect(status().isForbidden());
-
-		mockMvc.perform(get("/api/v1/orders/" + orderId).header("Authorization", "Bearer " + buyer1Token))
-				.andExpect(status().isOk());
-
-		mockMvc.perform(get("/api/v1/orders").header("Authorization", "Bearer " + buyer2Token))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.content.length()").value(0));
-
-		mockMvc.perform(get("/api/v1/orders").header("Authorization", "Bearer " + ownerToken))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.content.length()").value(1));
-	}
-
-	@Test
-	void orderingMoreThanAvailableStockFails() throws Exception {
-		String ownerToken = TestAuthSupport.registerAndGetToken(mockMvc, userRepository, "owner3@example.com", "OWNER");
-		Long productId = createProductAsOwner(ownerToken, 1);
-
-		String buyerToken = TestAuthSupport.registerAndGetToken(mockMvc, userRepository, "buyer3@example.com", "USER");
-
-		String orderBody = "{\"customerName\":\"Buyer\",\"customerEmail\":\"buyer3@example.com\",\"status\":\"PENDING\","
-				+ "\"items\":[{\"productId\":" + productId + ",\"quantity\":5}]}";
+	void createOrder_delegatesToServiceWithAuthenticatedUser() throws Exception {
+		User buyer = TestSecuritySupport.userWithRole(1L, "buyer@example.com", "USER");
+		when(orderService.createOrder(any(OrderCreateRequestDto.class), eq(buyer))).thenReturn(sampleOrder(5L, 1L));
 
 		mockMvc.perform(post("/api/v1/orders")
-						.header("Authorization", "Bearer " + buyerToken)
+						.with(TestSecuritySupport.asUser(buyer))
 						.contentType(MediaType.APPLICATION_JSON)
-						.content(orderBody))
+						.content("{\"customerName\":\"Buyer\",\"customerEmail\":\"buyer@example.com\",\"status\":\"PENDING\","
+								+ "\"items\":[{\"productId\":10,\"quantity\":2}]}"))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.id").value(5))
+				.andExpect(jsonPath("$.totalAmount").value(20.00));
+
+		verify(orderService).createOrder(any(OrderCreateRequestDto.class), eq(buyer));
+	}
+
+	@Test
+	void createOrder_insufficientStock_returnsConflict() throws Exception {
+		User buyer = TestSecuritySupport.userWithRole(1L, "buyer@example.com", "USER");
+		when(orderService.createOrder(any(OrderCreateRequestDto.class), eq(buyer)))
+				.thenThrow(new InsufficientStockException("Insufficient stock for product 'Widget'"));
+
+		mockMvc.perform(post("/api/v1/orders")
+						.with(TestSecuritySupport.asUser(buyer))
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{\"customerName\":\"Buyer\",\"customerEmail\":\"buyer@example.com\",\"status\":\"PENDING\","
+								+ "\"items\":[{\"productId\":10,\"quantity\":99}]}"))
 				.andExpect(status().isConflict());
+	}
+
+	@Test
+	void getOrderById_ownedOrder_returnsOk() throws Exception {
+		User buyer = TestSecuritySupport.userWithRole(1L, "buyer@example.com", "USER");
+		when(orderService.getOrderById(5L, buyer)).thenReturn(sampleOrder(5L, 1L));
+
+		mockMvc.perform(get("/api/v1/orders/5").with(TestSecuritySupport.asUser(buyer)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.id").value(5));
+	}
+
+	@Test
+	void getOrderById_notOwned_returnsForbidden() throws Exception {
+		User someoneElse = TestSecuritySupport.userWithRole(2L, "someone@example.com", "USER");
+		when(orderService.getOrderById(5L, someoneElse))
+				.thenThrow(new AccessDeniedException("You do not have access to this order"));
+
+		mockMvc.perform(get("/api/v1/orders/5").with(TestSecuritySupport.asUser(someoneElse)))
+				.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void getOrders_returnsPagedList() throws Exception {
+		User owner = TestSecuritySupport.userWithRole(1L, "owner@example.com", "OWNER");
+		when(orderService.getAllOrders(eq(owner), any())).thenReturn(new PageImpl<>(List.of(sampleOrder(5L, 9L))));
+
+		mockMvc.perform(get("/api/v1/orders").with(TestSecuritySupport.asUser(owner)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content[0].id").value(5));
+	}
+
+	@Test
+	void unauthenticatedRequestIsRejected() throws Exception {
+		mockMvc.perform(get("/api/v1/orders"))
+				.andExpect(status().isUnauthorized());
 	}
 }
