@@ -64,6 +64,28 @@ openssl rand -base64 64
 
 The API starts on `http://localhost:8080`. Hibernate auto-creates/updates the schema (`spring.jpa.hibernate.ddl-auto=update`) — no manual migrations needed for local dev.
 
+### Run it with Docker
+
+To run the whole stack (app + MySQL) without installing Java or MySQL locally:
+
+```
+docker compose up --build
+```
+
+This reads `JWT_SECRET` and `DATABASE_PASSWORD` from your `.env` file (so set that up first — see above) and starts MySQL with a persistent volume, waits for it to be healthy, then starts the app on `http://localhost:8080`. `DATABASE_URL` is set internally to point at the `mysql` service — you don't need to change it.
+
+To build just the application image on its own (e.g. to run against a database you're managing elsewhere):
+
+```
+docker build -t productstore .
+docker run -p 8080:8080 \
+  -e DATABASE_URL=jdbc:mysql://<host>:3306/productstore \
+  -e DATABASE_USERNAME=root \
+  -e DATABASE_PASSWORD=<password> \
+  -e JWT_SECRET=<secret> \
+  productstore
+```
+
 ### Explore it
 
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
