@@ -74,6 +74,8 @@ docker compose up --build
 
 This reads `JWT_SECRET` and `DATABASE_PASSWORD` from your `.env` file (so set that up first — see above) and starts MySQL with a persistent volume, waits for it to be healthy, then starts the app on `http://localhost:8080`. `DATABASE_URL` is set internally to point at the `mysql` service — you don't need to change it.
 
+MySQL only applies `DATABASE_PASSWORD` the first time it initializes its data volume. If you change it in `.env` after that, MySQL keeps the old password; run `docker compose down -v` first to drop the volume and let it re-initialize with the new one.
+
 To build just the application image on its own (e.g. to run against a database you're managing elsewhere):
 
 ```
